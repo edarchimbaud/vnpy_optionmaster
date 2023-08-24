@@ -3,19 +3,26 @@ from copy import copy
 from collections import defaultdict
 
 from vnpy.trader.object import (
-    LogData, ContractData, TickData,
-    OrderData, TradeData, PositionData,
-    SubscribeRequest, OrderRequest, CancelRequest
+    LogData,
+    ContractData,
+    TickData,
+    OrderData,
+    TradeData,
+    PositionData,
+    SubscribeRequest,
+    OrderRequest,
+    CancelRequest,
 )
 from vnpy.event import Event, EventEngine
 from vnpy.trader.engine import BaseEngine, MainEngine
 from vnpy.trader.event import (
-    EVENT_TRADE, EVENT_TICK, EVENT_CONTRACT,
-    EVENT_TIMER, EVENT_ORDER
+    EVENT_TRADE,
+    EVENT_TICK,
+    EVENT_CONTRACT,
+    EVENT_TIMER,
+    EVENT_ORDER,
 )
-from vnpy.trader.constant import (
-    Product, Offset, Direction, OrderType, Exchange, Status
-)
+from vnpy.trader.constant import Product, Offset, Direction, OrderType, Exchange, Status
 from vnpy.trader.converter import OffsetConverter, PositionHolding
 from vnpy.trader.utility import extract_vt_symbol, round_to, save_json, load_json
 
@@ -27,25 +34,29 @@ from .base import (
     EVENT_OPTION_ALGO_STATUS,
     EVENT_OPTION_ALGO_LOG,
     EVENT_OPTION_RISK_NOTICE,
-    InstrumentData, PortfolioData, OptionData,
-    get_underlying_prefix
+    InstrumentData,
+    PortfolioData,
+    OptionData,
+    get_underlying_prefix,
 )
+
 try:
     from .pricing import black_76_cython as black_76
     from .pricing import binomial_tree_cython as binomial_tree
     from .pricing import black_scholes_cython as black_scholes
 except ImportError:
-    from .pricing import (
-        black_76, binomial_tree, black_scholes
+    from .pricing import black_76, binomial_tree, black_scholes
+
+    print(
+        "Faile to import cython option pricing model, please rebuild with cython in cmd."
     )
-    print("Faile to import cython option pricing model, please rebuild with cython in cmd.")
 from .algo import ElectronicEyeAlgo
 
 
 PRICING_MODELS: dict = {
-    "Black-76 欧式期货期权": black_76,
-    "Black-Scholes 欧式股票期权": black_scholes,
-    "二叉树 美式期货期权": binomial_tree
+    "Black-76 European-style Futures Options": black_76,
+    "Black-Scholes European Stock Options": black_scholes,
+    "Binomial Tree American Futures Options": binomial_tree,
 }
 
 
@@ -145,7 +156,7 @@ class OptionEngine(BaseEngine):
 
         data: dict = {
             "chain_adjustments": chain_adjustments,
-            "pricing_impvs": pricing_impvs
+            "pricing_impvs": pricing_impvs,
         }
 
         save_json(self.data_filename, data)
@@ -161,7 +172,9 @@ class OptionEngine(BaseEngine):
         """"""
         tick: TickData = event.data
 
-        instrument: Optional[InstrumentData] = self.instruments.get(tick.vt_symbol, None)
+        instrument: Optional[InstrumentData] = self.instruments.get(
+            tick.vt_symbol, None
+        )
         if not instrument:
             return
 
@@ -175,7 +188,9 @@ class OptionEngine(BaseEngine):
         """"""
         trade: TradeData = event.data
 
-        instrument: Optional[InstrumentData] = self.instruments.get(trade.vt_symbol, None)
+        instrument: Optional[InstrumentData] = self.instruments.get(
+            trade.vt_symbol, None
+        )
         if not instrument:
             return
 
@@ -230,7 +245,7 @@ class OptionEngine(BaseEngine):
         model_name: str,
         interest_rate: float,
         chain_underlying_map: Dict[str, str],
-        precision: int = 0
+        precision: int = 0,
     ) -> None:
         """"""
         portfolio: PortfolioData = self.get_portfolio(portfolio_name)
@@ -245,10 +260,12 @@ class OptionEngine(BaseEngine):
                     product=Product.INDEX,
                     size=0,
                     pricetick=0,
-                    gateway_name=APP_NAME
+                    gateway_name=APP_NAME,
                 )
             else:
-                contract: Optional[ContractData] = self.main_engine.get_contract(underlying_symbol)
+                contract: Optional[ContractData] = self.main_engine.get_contract(
+                    underlying_symbol
+                )
             portfolio.set_chain_underlying(chain_symbol, contract)
 
         portfolio.set_interest_rate(interest_rate)
@@ -262,7 +279,7 @@ class OptionEngine(BaseEngine):
             "model_name": model_name,
             "interest_rate": interest_rate,
             "chain_underlying_map": chain_underlying_map,
-            "precision": precision
+            "precision": precision,
         }
         self.save_setting()
 
@@ -298,8 +315,12 @@ class OptionEngine(BaseEngine):
         # Update position volume
         for instrument in self.instruments.values():
             contract: ContractData = self.main_engine.get_contract(instrument.vt_symbol)
-            converter: OffsetConverter = self.main_engine.get_converter(contract.gateway_name)
-            holding: PositionHolding = converter.get_position_holding(instrument.vt_symbol)
+            converter: OffsetConverter = self.main_engine.get_converter(
+                contract.gateway_name
+            )
+            holding: PositionHolding = converter.get_position_holding(
+                instrument.vt_symbol
+            )
 
             if holding:
                 instrument.update_holding(holding)
@@ -325,10 +346,7 @@ class OptionEngine(BaseEngine):
             if contract.product == Product.OPTION:
                 continue
 
-            if (
-                underlying_prefix
-                and contract.symbol.startswith(underlying_prefix)
-            ):
+            if underlying_prefix and contract.symbol.startswith(underlying_prefix):
                 underlying_symbols.append(contract.vt_symbol)
 
         underlying_symbols.sort()
@@ -402,7 +420,7 @@ class OptionHedgeEngine:
         timer_trigger: int,
         delta_target: int,
         delta_range: int,
-        hedge_payup: int
+        hedge_payup: int,
     ) -> None:
         """"""
         if self.active:
@@ -447,7 +465,9 @@ class OptionHedgeEngine:
         # Send hedge orders
         tick: Optional[TickData] = self.main_engine.get_tick(self.vt_symbol)
         contract: Optional[ContractData] = self.main_engine.get_contract(self.vt_symbol)
-        converter: OffsetConverter = self.main_engine.get_converter(contract.gateway_name)
+        converter: OffsetConverter = self.main_engine.get_converter(
+            contract.gateway_name
+        )
         holding: PositionHolding = converter.get_position_holding(self.vt_symbol)
 
         # Check if hedge volume meets contract minimum trading volume
@@ -480,7 +500,7 @@ class OptionHedgeEngine:
             type=OrderType.LIMIT,
             volume=order_volume,
             price=round_to(price, contract.pricetick),
-            reference=f"{APP_NAME}_DeltaHedging"
+            reference=f"{APP_NAME}_DeltaHedging",
         )
 
         # Close positon if opposite available is enough
@@ -498,13 +518,17 @@ class OptionHedgeEngine:
             close_req: OrderRequest = copy(req)
             close_req.offset = Offset.CLOSE
             close_req.volume = available
-            close_orderid: str = self.main_engine.send_order(close_req, contract.gateway_name)
+            close_orderid: str = self.main_engine.send_order(
+                close_req, contract.gateway_name
+            )
             self.active_orderids.add(close_orderid)
 
             open_req: OrderRequest = copy(req)
             open_req.offset = Offset.OPEN
             open_req.volume = order_volume - available
-            open_orderid: str = self.main_engine.send_order(open_req, contract.gateway_name)
+            open_orderid: str = self.main_engine.send_order(
+                open_req, contract.gateway_name
+            )
             self.active_orderids.add(open_orderid)
 
     def check_order_finished(self) -> bool:
@@ -523,7 +547,6 @@ class OptionHedgeEngine:
 
 
 class OptionAlgoEngine:
-
     def __init__(self, option_engine: OptionEngine) -> None:
         """"""
         self.option_engine: OptionEngine = option_engine
@@ -572,7 +595,9 @@ class OptionAlgoEngine:
     def process_order_event(self, event: Event) -> None:
         """"""
         order: OrderData = event.data
-        algo: Optional[ElectronicEyeAlgo] = self.order_algo_map.get(order.vt_orderid, None)
+        algo: Optional[ElectronicEyeAlgo] = self.order_algo_map.get(
+            order.vt_orderid, None
+        )
 
         if algo:
             algo.on_order(order)
@@ -580,7 +605,9 @@ class OptionAlgoEngine:
     def process_trade_event(self, event: Event) -> None:
         """"""
         trade: TradeData = event.data
-        algo: Optional[ElectronicEyeAlgo] = self.order_algo_map.get(trade.vt_orderid, None)
+        algo: Optional[ElectronicEyeAlgo] = self.order_algo_map.get(
+            trade.vt_orderid, None
+        )
 
         if algo:
             algo.on_trade(trade)
@@ -602,12 +629,10 @@ class OptionAlgoEngine:
         self.active_algos[vt_symbol] = algo
 
         self.event_engine.register(
-            EVENT_TICK + algo.option.vt_symbol,
-            self.process_option_tick_event
+            EVENT_TICK + algo.option.vt_symbol, self.process_option_tick_event
         )
         self.event_engine.register(
-            EVENT_TICK + algo.underlying.vt_symbol,
-            self.process_underlying_tick_event
+            EVENT_TICK + algo.underlying.vt_symbol, self.process_underlying_tick_event
         )
 
     def stop_algo_pricing(self, vt_symbol: str) -> None:
@@ -619,8 +644,7 @@ class OptionAlgoEngine:
             return
 
         self.event_engine.unregister(
-            EVENT_TICK + vt_symbol,
-            self.process_option_tick_event
+            EVENT_TICK + vt_symbol, self.process_option_tick_event
         )
 
         buf: list = self.underlying_algo_map[algo.underlying.vt_symbol]
@@ -631,7 +655,7 @@ class OptionAlgoEngine:
         if not buf:
             self.event_engine.unregister(
                 EVENT_TICK + algo.underlying.vt_symbol,
-                self.process_underlying_tick_event
+                self.process_underlying_tick_event,
             )
 
     def start_algo_trading(self, vt_symbol: str, params: dict) -> None:
@@ -651,7 +675,7 @@ class OptionAlgoEngine:
         direction: Direction,
         offset: Offset,
         price: float,
-        volume: int
+        volume: int,
     ) -> str:
         """"""
         contract: Optional[ContractData] = self.main_engine.get_contract(vt_symbol)
@@ -664,7 +688,7 @@ class OptionAlgoEngine:
             volume,
             price,
             offset,
-            reference=f"{APP_NAME}_ElectronicEye"
+            reference=f"{APP_NAME}_ElectronicEye",
         )
 
         vt_orderid: str = self.main_engine.send_order(req, contract.gateway_name)
@@ -702,7 +726,7 @@ class OptionAlgoEngine:
 
 
 class OptionRiskEngine:
-    """期权风控引擎"""
+    """Options Risk Control Engine"""
 
     def __init__(self, option_engine: OptionEngine) -> None:
         """"""
@@ -711,15 +735,15 @@ class OptionRiskEngine:
 
         self.instruments: Dict[str, InstrumentData] = option_engine.instruments
 
-        # 成交持仓比风控
+        # Trading position ratio risk control
         self.trade_volume: int = 0
         self.net_pos: int = 0
 
-        # 委托撤单比风控
+        # Order cancellation over Risk Control
         self.all_orderids: set[str] = set()
         self.cancel_orderids: set[str] = set()
 
-        # 定时运行参数
+        # Timing parameters
         self.timer_count: int = 0
         self.timer_trigger: int = 10
 
@@ -759,7 +783,7 @@ class OptionRiskEngine:
         self.put_event()
 
     def put_event(self) -> None:
-        """推送事件"""
+        """Push event"""
         order_count: int = len(self.all_orderids)
         cancel_count: int = len(self.cancel_orderids)
 
@@ -779,6 +803,6 @@ class OptionRiskEngine:
             "order_count": len(self.all_orderids),
             "cancel_count": len(self.cancel_orderids),
             "trade_position_ratio": trade_position_ratio,
-            "cancel_order_ratio": cancel_order_ratio
+            "cancel_order_ratio": cancel_order_ratio,
         }
         self.event_engine.put(Event(EVENT_OPTION_RISK_NOTICE, data))

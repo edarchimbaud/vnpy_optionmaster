@@ -11,12 +11,7 @@ if TYPE_CHECKING:
 
 
 class ElectronicEyeAlgo:
-
-    def __init__(
-        self,
-        algo_engine: "OptionAlgoEngine",
-        option: OptionData
-    ) -> None:
+    def __init__(self, algo_engine: "OptionAlgoEngine", option: OptionData) -> None:
         """"""
         self.algo_engine: OptionAlgoEngine = algo_engine
         self.option: OptionData = option
@@ -59,7 +54,7 @@ class ElectronicEyeAlgo:
         self.pricing_active = True
         self.put_status_event()
         self.calculate_price()
-        self.write_log("启动定价")
+        self.write_log("Start pricing")
 
         return True
 
@@ -82,7 +77,7 @@ class ElectronicEyeAlgo:
 
         self.put_status_event()
         self.put_pricing_event()
-        self.write_log("停止定价")
+        self.write_log("Stop pricing")
 
         return True
 
@@ -92,7 +87,7 @@ class ElectronicEyeAlgo:
             return False
 
         if not self.pricing_active:
-            self.write_log("请先启动定价")
+            self.write_log("Please initiate pricing first")
             return False
 
         self.long_allowed = params["long_allowed"]
@@ -102,14 +97,14 @@ class ElectronicEyeAlgo:
         self.max_order_size = params["max_order_size"]
 
         if not self.max_order_size:
-            self.write_log("请先设置最大委托数量")
+            self.write_log("Please set the maximum number of orders first")
             return False
 
         self.trading_active = True
 
         self.put_trading_event()
         self.put_status_event()
-        self.write_log("启动交易")
+        self.write_log("Initiate trading")
 
         return True
 
@@ -125,7 +120,7 @@ class ElectronicEyeAlgo:
 
         self.put_status_event()
         self.put_trading_event()
-        self.write_log("停止交易")
+        self.write_log("Stopped trading")
 
         return True
 
@@ -153,8 +148,8 @@ class ElectronicEyeAlgo:
     def on_trade(self, trade: TradeData) -> None:
         """"""
         msg: str = (
-            f"委托成交，{trade.direction} {trade.offset} {trade.volume}@{trade.price}，"
-            f"委托号[{trade.vt_orderid}，成交号[{trade.vt_tradeid}]"
+            f"Trade order, {trade.direction} {trade.offset} {trade.volume}@{trade.price},"
+            f"trade number [{{trade.vt_orderid}, transaction number [{trade.vt_tradeid}]"
         )
         self.write_log(msg)
 
@@ -167,23 +162,14 @@ class ElectronicEyeAlgo:
             self.cancel_short()
 
     def send_order(
-        self,
-        direction: Direction,
-        offset: Offset,
-        price: float,
-        volume: int
+        self, direction: Direction, offset: Offset, price: float, volume: int
     ) -> str:
         """"""
         vt_orderid: str = self.algo_engine.send_order(
-            self,
-            self.vt_symbol,
-            direction,
-            offset,
-            price,
-            volume
+            self, self.vt_symbol, direction, offset, price, volume
         )
 
-        self.write_log(f"发出委托，{direction} {offset} {volume}@{price} [{vt_orderid}]")
+        self.write_log(f"Issuing an order, {direction} {offset} {volume}@{price} [{vt_orderid}]")
 
         return vt_orderid
 
@@ -236,7 +222,7 @@ class ElectronicEyeAlgo:
 
     def cancel_order(self, vt_orderid: str) -> None:
         """"""
-        self.write_log(f"委托撤单：[{vt_orderid}]")
+        self.write_log(f"Order cancellation: [{vt_orderid}]")
         self.algo_engine.cancel_order(vt_orderid)
 
     def cancel_long(self) -> None:
@@ -274,8 +260,7 @@ class ElectronicEyeAlgo:
 
         # Calculate spread
         algo_spread: float = max(
-            self.price_spread,
-            self.volatility_spread * option.cash_vega / option.size
+            self.price_spread, self.volatility_spread * option.cash_vega / option.size
         )
         half_spread: float = algo_spread / 2
 
@@ -305,11 +290,7 @@ class ElectronicEyeAlgo:
 
         # Check price
         if volume_left > 0 and tick.ask_price_1 <= self.algo_bid_price:
-            volume = min(
-                volume_left,
-                tick.ask_volume_1,
-                self.max_order_size
-            )
+            volume = min(volume_left, tick.ask_volume_1, self.max_order_size)
 
             self.send_long(self.algo_bid_price, volume)
 
@@ -324,11 +305,7 @@ class ElectronicEyeAlgo:
 
         # Check price
         if volume_left > 0 and tick.bid_price_1 >= self.algo_ask_price:
-            volume = min(
-                volume_left,
-                tick.bid_volume_1,
-                self.max_order_size
-            )
+            volume = min(volume_left, tick.bid_volume_1, self.max_order_size)
 
             self.send_short(self.algo_ask_price, volume)
 

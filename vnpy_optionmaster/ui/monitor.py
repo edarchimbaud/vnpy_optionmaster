@@ -5,9 +5,7 @@ from collections import defaultdict
 from vnpy.event import Event, EventEngine
 from vnpy.trader.ui import QtWidgets, QtCore, QtGui
 from vnpy.trader.ui.widget import COLOR_BID, COLOR_ASK, COLOR_BLACK
-from vnpy.trader.event import (
-    EVENT_TICK, EVENT_TRADE, EVENT_POSITION, EVENT_TIMER
-)
+from vnpy.trader.event import EVENT_TICK, EVENT_TRADE, EVENT_POSITION, EVENT_TIMER
 from vnpy.trader.object import TickData, TradeData, PositionData
 from vnpy.trader.utility import round_to
 
@@ -98,7 +96,7 @@ class MonitorTable(QtWidgets.QTableWidget):
         """
         self.menu: QtWidgets.QMenu = QtWidgets.QMenu(self)
 
-        resize_action = QtGui.QAction("调整列宽", self)
+        resize_action = QtGui.QAction("Adjust column width", self)
         resize_action.triggered.connect(self.resizeColumnsToContents)
         self.menu.addAction(resize_action)
 
@@ -111,25 +109,26 @@ class MonitorTable(QtWidgets.QTableWidget):
 
 class OptionMarketMonitor(MonitorTable):
     """"""
+
     signal_tick: QtCore.Signal = QtCore.Signal(Event)
     signal_trade: QtCore.Signal = QtCore.Signal(Event)
     signal_position: QtCore.Signal = QtCore.Signal(Event)
 
     headers: List[Dict] = [
-        {"name": "symbol", "display": "代码", "cell": MonitorCell},
+        {"name": "symbol", "display": "Symbol", "cell": MonitorCell},
         {"name": "cash_vega", "display": "Vega", "cell": GreeksCell},
         {"name": "cash_theta", "display": "Theta", "cell": GreeksCell},
         {"name": "cash_gamma", "display": "Gamma", "cell": GreeksCell},
         {"name": "cash_delta", "display": "Delta", "cell": GreeksCell},
-        {"name": "open_interest", "display": "持仓量", "cell": MonitorCell},
-        {"name": "volume", "display": "成交量", "cell": MonitorCell},
-        {"name": "bid_impv", "display": "买隐波", "cell": BidCell},
-        {"name": "bid_volume", "display": "买量", "cell": BidCell},
-        {"name": "bid_price", "display": "买价", "cell": BidCell},
-        {"name": "ask_price", "display": "卖价", "cell": AskCell},
-        {"name": "ask_volume", "display": "卖量", "cell": AskCell},
-        {"name": "ask_impv", "display": "卖隐波", "cell": AskCell},
-        {"name": "net_pos", "display": "净持仓", "cell": PosCell},
+        {"name": "open_interest", "display": "Open interest", "cell": MonitorCell},
+        {"name": "volume", "display": "Volume", "cell": MonitorCell},
+        {"name": "bid_impv", "display": "Bid impv", "cell": BidCell},
+        {"name": "bid_volume", "display": "Bid volume", "cell": BidCell},
+        {"name": "bid_price", "display": "Bid price", "cell": BidCell},
+        {"name": "ask_price", "display": "Ask price", "cell": AskCell},
+        {"name": "ask_volume", "display": "Ask volume", "cell": AskCell},
+        {"name": "ask_impv", "display": "Askimpv", "cell": AskCell},
+        {"name": "net_pos", "display": "Net position", "cell": PosCell},
     ]
 
     def __init__(self, option_engine: OptionEngine, portfolio_name: str) -> None:
@@ -149,7 +148,7 @@ class OptionMarketMonitor(MonitorTable):
 
     def init_ui(self) -> None:
         """"""
-        self.setWindowTitle("T型报价")
+        self.setWindowTitle("T-quotes")
         self.verticalHeader().setVisible(False)
         self.setEditTriggers(self.NoEditTriggers)
 
@@ -158,7 +157,9 @@ class OptionMarketMonitor(MonitorTable):
 
         for option in portfolio.options.values():
             self.option_symbols.add(option.vt_symbol)
-            self.underlying_option_map[option.underlying.vt_symbol].append(option.vt_symbol)
+            self.underlying_option_map[option.underlying.vt_symbol].append(
+                option.vt_symbol
+            )
 
         # Get greeks decimals precision
         self.greeks_precision: str = f"{portfolio.precision}f"
@@ -166,7 +167,7 @@ class OptionMarketMonitor(MonitorTable):
         # Set table row and column numbers
         row_count: int = 0
         for chain in portfolio.chains.values():
-            row_count += (1 + len(chain.indexes))
+            row_count += 1 + len(chain.indexes)
         self.setRowCount(row_count)
 
         column_count: int = len(self.headers) * 2 + 1
@@ -175,7 +176,7 @@ class OptionMarketMonitor(MonitorTable):
         call_labels: list = [d["display"] for d in self.headers]
         put_labels: list = copy(call_labels)
         put_labels.reverse()
-        labels: list = call_labels + ["行权价"] + put_labels
+        labels: list = call_labels + ["Strike price"] + put_labels
         self.setHorizontalHeaderLabels(labels)
 
         # Init cells
@@ -189,9 +190,7 @@ class OptionMarketMonitor(MonitorTable):
             chain: ChainData = portfolio.get_chain(chain_symbol)
 
             self.setItem(
-                current_row,
-                strike_column,
-                IndexCell(chain.chain_symbol.split(".")[0])
+                current_row, strike_column, IndexCell(chain.chain_symbol.split(".")[0])
             )
 
             for index in chain.indexes:
@@ -205,10 +204,7 @@ class OptionMarketMonitor(MonitorTable):
 
                 for column, d in enumerate(self.headers):
                     value = getattr(call, d["name"], "")
-                    cell = d["cell"](
-                        text=str(value),
-                        vt_symbol=call.vt_symbol
-                    )
+                    cell = d["cell"](text=str(value), vt_symbol=call.vt_symbol)
                     self.setItem(current_row, column, cell)
                     call_cells[d["name"]] = cell
 
@@ -220,12 +216,9 @@ class OptionMarketMonitor(MonitorTable):
                 put_headers.reverse()
 
                 for column, d in enumerate(put_headers):
-                    column += (strike_column + 1)
+                    column += strike_column + 1
                     value = getattr(put, d["name"], "")
-                    cell = d["cell"](
-                        text=str(value),
-                        vt_symbol=put.vt_symbol
-                    )
+                    cell = d["cell"](text=str(value), vt_symbol=put.vt_symbol)
                     self.setItem(current_row, column, cell)
                     put_cells[d["name"]] = cell
 
@@ -291,9 +284,9 @@ class OptionMarketMonitor(MonitorTable):
 
         option: InstrumentData = self.option_engine.get_instrument(vt_symbol)
         tick: TickData = option.tick
-        option_cells["bid_price"].setText(f'{tick.bid_price_1:0.4f}')
+        option_cells["bid_price"].setText(f"{tick.bid_price_1:0.4f}")
         option_cells["bid_volume"].setText(str(tick.bid_volume_1))
-        option_cells["ask_price"].setText(f'{tick.ask_price_1:0.4f}')
+        option_cells["ask_price"].setText(f"{tick.ask_price_1:0.4f}")
         option_cells["ask_volume"].setText(str(tick.ask_volume_1))
         option_cells["volume"].setText(str(tick.volume))
         option_cells["open_interest"].setText(str(tick.open_interest))
@@ -316,26 +309,35 @@ class OptionMarketMonitor(MonitorTable):
 
         option: InstrumentData = self.option_engine.get_instrument(vt_symbol)
 
-        option_cells["cash_delta"].setText(f"{option.cash_delta:.{self.greeks_precision}}")
-        option_cells["cash_gamma"].setText(f"{option.cash_gamma:.{self.greeks_precision}}")
-        option_cells["cash_theta"].setText(f"{option.cash_theta:.{self.greeks_precision}}")
-        option_cells["cash_vega"].setText(f"{option.cash_vega:.{self.greeks_precision}}")
+        option_cells["cash_delta"].setText(
+            f"{option.cash_delta:.{self.greeks_precision}}"
+        )
+        option_cells["cash_gamma"].setText(
+            f"{option.cash_gamma:.{self.greeks_precision}}"
+        )
+        option_cells["cash_theta"].setText(
+            f"{option.cash_theta:.{self.greeks_precision}}"
+        )
+        option_cells["cash_vega"].setText(
+            f"{option.cash_vega:.{self.greeks_precision}}"
+        )
 
 
 class OptionGreeksMonitor(MonitorTable):
     """"""
+
     signal_tick: QtCore.Signal = QtCore.Signal(Event)
     signal_trade: QtCore.Signal = QtCore.Signal(Event)
     signal_position: QtCore.Signal = QtCore.Signal(Event)
 
     headers: List[Dict] = [
-        {"name": "long_pos", "display": "多仓", "cell": PosCell},
-        {"name": "short_pos", "display": "空仓", "cell": PosCell},
-        {"name": "net_pos", "display": "净仓", "cell": PosCell},
+        {"name": "long_pos", "display": "Long position", "cell": PosCell},
+        {"name": "short_pos", "display": "Short position", "cell": PosCell},
+        {"name": "net_pos", "display": "Net position", "cell": PosCell},
         {"name": "pos_delta", "display": "Delta", "cell": GreeksCell},
         {"name": "pos_gamma", "display": "Gamma", "cell": GreeksCell},
         {"name": "pos_theta", "display": "Theta", "cell": GreeksCell},
-        {"name": "pos_vega", "display": "Vega", "cell": GreeksCell}
+        {"name": "pos_vega", "display": "Vega", "cell": GreeksCell},
     ]
 
     ROW_DATA = Union[OptionData, UnderlyingData, ChainData, PortfolioData]
@@ -357,7 +359,7 @@ class OptionGreeksMonitor(MonitorTable):
 
     def init_ui(self) -> None:
         """"""
-        self.setWindowTitle("希腊值风险")
+        self.setWindowTitle("Greek value risk")
         self.verticalHeader().setVisible(False)
         self.setEditTriggers(self.NoEditTriggers)
 
@@ -366,7 +368,9 @@ class OptionGreeksMonitor(MonitorTable):
 
         for option in portfolio.options.values():
             self.option_symbols.add(option.vt_symbol)
-            self.underlying_option_map[option.underlying.vt_symbol].append(option.vt_symbol)
+            self.underlying_option_map[option.underlying.vt_symbol].append(
+                option.vt_symbol
+            )
 
         # Get greeks decimals precision
         self.greeks_precision: str = f"{portfolio.precision}f"
@@ -374,9 +378,9 @@ class OptionGreeksMonitor(MonitorTable):
         # Set table row and column numbers
         row_count: int = 2
 
-        row_count += (len(portfolio.underlyings) + 1)
+        row_count += len(portfolio.underlyings) + 1
 
-        row_count += (len(portfolio.chains) + 1)
+        row_count += len(portfolio.chains) + 1
 
         for chain in portfolio.chains.values():
             row_count += len(chain.options)
@@ -386,30 +390,30 @@ class OptionGreeksMonitor(MonitorTable):
         column_count: int = len(self.headers) + 2
         self.setColumnCount(column_count)
 
-        labels: list = ["类别", "代码"] + [d["display"] for d in self.headers]
+        labels: list = ["Category", "Symbol"] + [d["display"] for d in self.headers]
         self.setHorizontalHeaderLabels(labels)
 
         # Init cells
         row_settings: list = []
-        row_settings.append((self.portfolio_name, "组合"))
+        row_settings.append((self.portfolio_name, "Portfolio"))
         row_settings.append(None)
 
         underlying_symbols: list = list(portfolio.underlyings.keys())
         underlying_symbols.sort()
         for underlying_symbol in underlying_symbols:
-            row_settings.append((underlying_symbol, "标的"))
+            row_settings.append((underlying_symbol, "Underlying symbol"))
         row_settings.append(None)
 
         chain_symbols: list = list(portfolio.chains.keys())
         chain_symbols.sort()
         for chain_symbol in chain_symbols:
-            row_settings.append((chain_symbol, "期权链"))
+            row_settings.append((chain_symbol, "Chain symbols"))
         row_settings.append(None)
 
         option_symbols: list = list(portfolio.options.keys())
         option_symbols.sort()
         for option_symbol in option_symbols:
-            row_settings.append((option_symbol, "期权"))
+            row_settings.append((option_symbol, "Option symbols"))
 
         for row, row_key in enumerate(row_settings):
             if not row_key:
@@ -473,32 +477,32 @@ class OptionGreeksMonitor(MonitorTable):
     def update_underlying_tick(self, vt_symbol: str) -> None:
         """"""
         underlying: InstrumentData = self.option_engine.get_instrument(vt_symbol)
-        self.update_row(vt_symbol, "标的", underlying)
+        self.update_row(vt_symbol, "Underlying", underlying)
 
         for chain in underlying.chains.values():
-            self.update_row(chain.chain_symbol, "期权链", chain)
+            self.update_row(chain.chain_symbol, "Option chain", chain)
 
             for option in chain.options.values():
-                self.update_row(option.vt_symbol, "期权", option)
+                self.update_row(option.vt_symbol, "Option", option)
 
         portfolio: PositionData = underlying.portfolio
-        self.update_row(portfolio.name, "组合", portfolio)
+        self.update_row(portfolio.name, "Portfolio", portfolio)
 
     def update_pos(self, vt_symbol: str) -> None:
         """"""
         instrument: InstrumentData = self.option_engine.get_instrument(vt_symbol)
         if isinstance(instrument, OptionData):
-            self.update_row(vt_symbol, "期权", instrument)
+            self.update_row(vt_symbol, "Option", instrument)
         else:
-            self.update_row(vt_symbol, "标的", instrument)
+            self.update_row(vt_symbol, "Underlying", instrument)
 
         # For option, greeks of chain also needs to be updated.
         if isinstance(instrument, OptionData):
             chain: ChainData = instrument.chain
-            self.update_row(chain.chain_symbol, "期权链", chain)
+            self.update_row(chain.chain_symbol, "Options chain", chain)
 
         portfolio: PortfolioData = instrument.portfolio
-        self.update_row(portfolio.name, "组合", portfolio)
+        self.update_row(portfolio.name, "Portfolio", portfolio)
 
     def update_row(self, row_name: str, type_name: str, row_data: ROW_DATA) -> None:
         """"""
@@ -520,13 +524,20 @@ class OptionGreeksMonitor(MonitorTable):
         row_cells["pos_delta"].setText(f"{row_data.pos_delta:.{self.greeks_precision}}")
 
         if not isinstance(row_data, UnderlyingData):
-            row_cells["pos_gamma"].setText(f"{row_data.pos_gamma:.{self.greeks_precision}}")
-            row_cells["pos_theta"].setText(f"{row_data.pos_theta:.{self.greeks_precision}}")
-            row_cells["pos_vega"].setText(f"{row_data.pos_vega:.{self.greeks_precision}}")
+            row_cells["pos_gamma"].setText(
+                f"{row_data.pos_gamma:.{self.greeks_precision}}"
+            )
+            row_cells["pos_theta"].setText(
+                f"{row_data.pos_theta:.{self.greeks_precision}}"
+            )
+            row_cells["pos_vega"].setText(
+                f"{row_data.pos_vega:.{self.greeks_precision}}"
+            )
 
 
 class OptionChainMonitor(MonitorTable):
     """"""
+
     signal_timer: QtCore.Signal = QtCore.Signal(Event)
 
     def __init__(self, option_engine: OptionEngine, portfolio_name: str):
@@ -544,7 +555,7 @@ class OptionChainMonitor(MonitorTable):
 
     def init_ui(self) -> None:
         """"""
-        self.setWindowTitle("期权链跟踪")
+        self.setWindowTitle("Option chain tracking")
         self.verticalHeader().setVisible(False)
         self.setEditTriggers(self.NoEditTriggers)
 
@@ -554,7 +565,7 @@ class OptionChainMonitor(MonitorTable):
         # Set table row and column numbers
         self.setRowCount(len(portfolio.chains))
 
-        labels: list = ["期权链", "剩余交易日", "标的物", "升贴水"]
+        labels: list = ["Options chain", "Remaining trading days", "Underlying", "Premium"]
         self.setColumnCount(len(labels))
         self.setHorizontalHeaderLabels(labels)
 
@@ -574,7 +585,7 @@ class OptionChainMonitor(MonitorTable):
 
             self.cells[chain.chain_symbol] = {
                 "underlying": underlying_cell,
-                "adjustment": adjustment_cell
+                "adjustment": adjustment_cell,
             }
 
         # Additional table adjustment

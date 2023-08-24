@@ -11,20 +11,20 @@ from ..time import ANNUAL_DAYS
 
 import numpy as np
 import matplotlib
-matplotlib.use('Qt5Agg')                    # noqa
-import matplotlib.pyplot as plt             # noqa
+
+matplotlib.use("Qt5Agg")  # noqa
+import matplotlib.pyplot as plt  # noqa
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas  # noqa
-from matplotlib.figure import Figure        # noqa
-from mpl_toolkits.mplot3d import Axes3D     # noqa
-from pylab import mpl                       # noqa
+from matplotlib.figure import Figure  # noqa
+from mpl_toolkits.mplot3d import Axes3D  # noqa
+from pylab import mpl  # noqa
 
 plt.style.use("dark_background")
-mpl.rcParams['font.sans-serif'] = ['Microsoft YaHei']   # set font for Chinese
-mpl.rcParams['axes.unicode_minus'] = False
+mpl.rcParams["font.sans-serif"] = ["Microsoft YaHei"]  # set font for Chinese
+mpl.rcParams["axes.unicode_minus"] = False
 
 
 class OptionVolatilityChart(QtWidgets.QWidget):
-
     signal_timer: QtCore.Signal = QtCore.Signal(Event)
 
     def __init__(self, option_engine: OptionEngine, portfolio_name: str) -> None:
@@ -60,7 +60,7 @@ class OptionVolatilityChart(QtWidgets.QWidget):
 
     def init_ui(self) -> None:
         """"""
-        self.setWindowTitle("波动率曲线")
+        self.setWindowTitle("Volatility Curve")
 
         # Create checkbox for each chain
         hbox: QtWidgets.QHBoxLayout = QtWidgets.QHBoxLayout()
@@ -86,10 +86,10 @@ class OptionVolatilityChart(QtWidgets.QWidget):
         pg.setConfigOptions(antialias=True)
 
         graphics_window: pg.GraphicsLayoutWidget = pg.GraphicsLayoutWidget()
-        self.impv_chart = graphics_window.addPlot(title="隐含波动率曲线")
+        self.impv_chart = graphics_window.addPlot(title="Implied volatility curve")
         self.impv_chart.showGrid(x=True, y=True)
-        self.impv_chart.setLabel("left", "波动率")
-        self.impv_chart.setLabel("bottom", "行权价")
+        self.impv_chart.setLabel("left", "Volatility")
+        self.impv_chart.setLabel("bottom", "Strike price")
         self.impv_chart.addLegend()
         self.impv_chart.setMenuEnabled(False)
         self.impv_chart.setMouseEnabled(False, False)
@@ -128,23 +128,23 @@ class OptionVolatilityChart(QtWidgets.QWidget):
         self.call_curves[chain_symbol] = self.impv_chart.plot(
             symbolSize=symbol_size,
             symbol="t1",
-            name=symbol + " 看涨",
+            name=symbol + " call",
             pen=pen,
-            symbolBrush=color
+            symbolBrush=color,
         )
         self.put_curves[chain_symbol] = self.impv_chart.plot(
             symbolSize=symbol_size,
             symbol="t",
-            name=symbol + " 看跌",
+            name=symbol + " put",
             pen=pen,
-            symbolBrush=color
+            symbolBrush=color,
         )
         self.pricing_curves[chain_symbol] = self.impv_chart.plot(
             symbolSize=symbol_size,
             symbol="o",
-            name=symbol + " 定价",
+            name=symbol + " pricing",
             pen=pen,
-            symbolBrush=color
+            symbolBrush=color,
         )
 
     def update_curve_data(self) -> None:
@@ -166,17 +166,10 @@ class OptionVolatilityChart(QtWidgets.QWidget):
                 put: OptionData = chain.puts[index]
                 put_impv.append(put.mid_impv * 100)
 
-            self.call_curves[chain.chain_symbol].setData(
-                y=call_impv,
-                x=strike_prices
-            )
-            self.put_curves[chain.chain_symbol].setData(
-                y=put_impv,
-                x=strike_prices
-            )
+            self.call_curves[chain.chain_symbol].setData(y=call_impv, x=strike_prices)
+            self.put_curves[chain.chain_symbol].setData(y=put_impv, x=strike_prices)
             self.pricing_curves[chain.chain_symbol].setData(
-                y=pricing_impv,
-                x=strike_prices
+                y=pricing_impv, x=strike_prices
             )
 
     def update_curve_visible(self) -> None:
@@ -208,7 +201,7 @@ class ScenarioAnalysisChart(QtWidgets.QWidget):
 
     def init_ui(self) -> None:
         """"""
-        self.setWindowTitle("情景分析")
+        self.setWindowTitle("Scenario analysis")
 
         # Create widgets
         self.price_change_spin: QtWidgets.QSpinBox = QtWidgets.QSpinBox()
@@ -222,20 +215,14 @@ class ScenarioAnalysisChart(QtWidgets.QWidget):
         self.impv_change_spin.setValue(10)
 
         self.time_change_spin: QtWidgets.QSpinBox = QtWidgets.QSpinBox()
-        self.time_change_spin.setSuffix("日")
+        self.time_change_spin.setSuffix("Day")
         self.time_change_spin.setMinimum(0)
         self.time_change_spin.setValue(1)
 
         self.target_combo: QtWidgets.QComboBox = QtWidgets.QComboBox()
-        self.target_combo.addItems([
-            "盈亏",
-            "Delta",
-            "Gamma",
-            "Theta",
-            "Vega"
-        ])
+        self.target_combo.addItems(["P&L", "Delta", "Gamma", "Theta", "Vega"])
 
-        button: QtWidgets.QPushButton = QtWidgets.QPushButton("执行分析")
+        button: QtWidgets.QPushButton = QtWidgets.QPushButton("Perform analysis")
         button.clicked.connect(self.run_analysis)
 
         # Create charts
@@ -243,22 +230,22 @@ class ScenarioAnalysisChart(QtWidgets.QWidget):
         canvas: FigureCanvas = FigureCanvas(fig)
 
         self.ax = fig.gca(projection="3d")
-        self.ax.set_xlabel("价格涨跌 %")
-        self.ax.set_ylabel("波动率涨跌 %")
-        self.ax.set_zlabel("盈亏")
+        self.ax.set_xlabel("Price increase/decrease %")
+        self.ax.set_ylabel("Volatility up/down %")
+        self.ax.set_zlabel("P&L")
 
         # Set layout
         hbox1: QtWidgets.QHBoxLayout = QtWidgets.QHBoxLayout()
-        hbox1.addWidget(QtWidgets.QLabel("目标数据"))
+        hbox1.addWidget(QtWidgets.QLabel("Targer"))
         hbox1.addWidget(self.target_combo)
-        hbox1.addWidget(QtWidgets.QLabel("时间衰减"))
+        hbox1.addWidget(QtWidgets.QLabel("Time change"))
         hbox1.addWidget(self.time_change_spin)
         hbox1.addStretch()
 
         hbox2: QtWidgets.QHBoxLayout = QtWidgets.QHBoxLayout()
-        hbox2.addWidget(QtWidgets.QLabel("价格变动"))
+        hbox2.addWidget(QtWidgets.QLabel("Price change"))
         hbox2.addWidget(self.price_change_spin)
-        hbox2.addWidget(QtWidgets.QLabel("波动率变动"))
+        hbox2.addWidget(QtWidgets.QLabel("Volatility change"))
         hbox2.addWidget(self.impv_change_spin)
         hbox2.addStretch()
         hbox2.addWidget(button)
@@ -289,9 +276,8 @@ class ScenarioAnalysisChart(QtWidgets.QWidget):
             if not underlying.mid_price:
                 QtWidgets.QMessageBox.warning(
                     self,
-                    "无法执行情景分析",
-                    f"标的物{underlying.symbol}当前中间价为{underlying.mid_price}",
-                    QtWidgets.QMessageBox.Ok
+                    "Unable to perform scenario analysis",
+                    f"The current mid-price of the underlying {underlying.symbol} is {underlying.mid_price}".QtWidgets.QMessageBox.Ok,
                 )
                 return
 
@@ -330,7 +316,9 @@ class ScenarioAnalysisChart(QtWidgets.QWidget):
                     if not option.net_pos:
                         continue
 
-                    new_underlying_price = option.underlying.mid_price * (1 + price_change)
+                    new_underlying_price = option.underlying.mid_price * (
+                        1 + price_change
+                    )
                     new_time_to_expiry = max(option.time_to_expiry - time_change, 0)
                     new_mid_impv = option.mid_impv * (1 + impv_change)
 
@@ -340,7 +328,7 @@ class ScenarioAnalysisChart(QtWidgets.QWidget):
                         option.interest_rate,
                         new_time_to_expiry,
                         new_mid_impv,
-                        option.option_type
+                        option.option_type,
                     )
 
                     diff = new_price - option.tick.last_price
@@ -365,7 +353,7 @@ class ScenarioAnalysisChart(QtWidgets.QWidget):
             vegas.append(vega_buf)
 
         # Plot chart
-        if target_name == "盈亏":
+        if target_name == "P&L":
             target_data: list = pnls
         elif target_name == "Delta":
             target_data: list = deltas
@@ -376,14 +364,16 @@ class ScenarioAnalysisChart(QtWidgets.QWidget):
         else:
             target_data: list = vegas
 
-        self.update_chart(price_changes * 100, impv_changes * 100, target_data, target_name)
+        self.update_chart(
+            price_changes * 100, impv_changes * 100, target_data, target_name
+        )
 
     def update_chart(
         self,
         price_changes: np.array,
         impv_changes: np.array,
         target_data: List[List[float]],
-        target_name: str
+        target_name: str,
     ) -> None:
         """"""
         self.ax.clear()
@@ -397,5 +387,5 @@ class ScenarioAnalysisChart(QtWidgets.QWidget):
             Z=np.array(target_data),
             rstride=1,
             cstride=1,
-            cmap=matplotlib.cm.coolwarm
+            cmap=matplotlib.cm.coolwarm,
         )

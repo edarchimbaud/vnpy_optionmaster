@@ -1,29 +1,29 @@
-# 1.0.7版本
+# Version 1.0.7
 
-1. 修复Greeks监控表行数设置不足的bug
-2. 改为使用OmsEngine提供的OffsetConverter组件
-3. 修复OptionMaster管理界面配置商品期货报错的问题
+1. Fix the bug that the number of rows in the Greeks monitoring table is not set enough.
+2. Change to use OffsetConverter component provided by OmsEngine.
+3. Fix the problem of configuring commodity futures in OptionMaster management interface.
 
-# 1.0.6版本
-1. 增加对更多期权品种的支持
-2. 增加期权产品对应标的合约的匹配函数，不再限制产品范围
+# Version 1.0.6
+1. Add support for more option varieties
+2. Add the matching function for the underlying contract of option products, and no longer limit the product range.
 
-# 1.0.5版本
+# Version 1.0.5
 
-1. 适配新版本exchange_calendars的函数调用方式
-2. 限制exchange_calendars依赖版本不低于4.1.1
+1. Adapted the new version of exchange_calendars function calls.
+2. Restrict exchange_calendars to rely on version 4.1.1 or lower
 
-# 1.0.4版本
+# Version 1.0.4
 
-1. 移除反向合约支持
+1. Remove reverse contract support
 
-# 1.0.3版本
+# Version 1.0.3
 
-1. 完善变量和函数的类型声明
-2. 修复希腊值风险监控模块的数据刷新问题
-3. UI相关代码替换PySide6风格API调用
+1. Improve variable and function type declarations
+2. Fix data refresh issue in Greek value risk monitoring module
+3. Replace PySide6 style API calls with UI related code.
 
 
-# 1.0.2版本
+# Version 1.0.2
 
-1. 将模块的图标文件信息，改为完整路径字符串
+1. Change the icon file information of the module to a full path string.
