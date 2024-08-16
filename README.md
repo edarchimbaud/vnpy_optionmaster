@@ -17,7 +17,7 @@ An application module designed for option volatility trading strategies, support
 
 ## Installation
 
-The installation environment is recommended based on version 3.0.0 or above of [[**VeighNa Studio**](https://edarchimbaud.com/veighna-website)].
+The installation environment is recommended based on version 3.0.0 or above of [[**VeighNa Studio**](https://github.com/paperswithbacktest/vnpy)].
 
 Use the pip command directly:
 
